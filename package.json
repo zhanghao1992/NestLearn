@@ -1,0 +1,25 @@
+{
+  "name": "taskflow",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TaskFlow - 全栈团队任务协作平台 (Next.js + NestJS + PostgreSQL)",
+  "scripts": {
+    "build:shared": "pnpm --filter @taskflow/shared build",
+    "dev": "pnpm build:shared && pnpm --parallel --filter ./apps/* dev",
+    "dev:api": "pnpm build:shared && pnpm --filter @taskflow/api dev",
+    "dev:web": "pnpm --filter @taskflow/web dev",
+    "build": "pnpm build:shared && pnpm -r build",
+    "lint": "pnpm -r lint",
+    "db:up": "docker compose -f docker/docker-compose.yml up -d",
+    "db:down": "docker compose -f docker/docker-compose.yml down",
+    "db:logs": "docker compose -f docker/docker-compose.yml logs -f"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  }
+}

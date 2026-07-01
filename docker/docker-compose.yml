@@ -1,0 +1,21 @@
+# 本地开发数据库
+# 启动: pnpm db:up  停止: pnpm db:down  查看日志: pnpm db:logs
+services:
+  postgres:
+    image: postgres:latest
+    container_name: taskflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: taskflow
+      POSTGRES_PASSWORD: taskflow
+      POSTGRES_DB: taskflow
+    ports:
+      - "5432:5432"
+    volumes:
+      # PG18+ 数据目录布局：挂载到 /var/lib/postgresql
+      - ./data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5

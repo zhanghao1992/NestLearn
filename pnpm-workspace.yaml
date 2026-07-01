@@ -1,0 +1,15 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+allowBuilds:
+  '@nestjs/core': set this to true or false
+  '@scarf/scarf': set this to true or false
+
+# pnpm v11: 允许执行构建脚本的依赖白名单
+onlyBuiltDependencies:
+  - "@nestjs/core"
+  - "@prisma/client"
+  - "@prisma/engines"
+  - "prisma"
+  - "@scarf/scarf"

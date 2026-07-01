@@ -1,0 +1,7 @@
+# 需要时复制为 docker-compose.override.yml，再 pnpm db:up
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: taskflow-redis
+    ports:
+      - "6379:6379"

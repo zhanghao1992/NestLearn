@@ -1,0 +1,171 @@
+// Prisma Schema - 对应 docs/PRD.md 的数据模型
+// 文档：https://www.prisma.io/docs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================== 用户 ==============================
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String // bcrypt 哈希存储
+  name      String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联关系
+  memberships     WorkspaceMember[]
+  ownedWorkspaces Workspace[]        @relation("WorkspaceOwner")
+  comments        Comment[]
+  assignedTasks   Task[]             @relation("TaskAssignee")
+  createdTasks    Task[]             @relation("TaskCreator")
+  notifications   Notification[]
+}
+
+// ============================== 工作空间 ==============================
+model Workspace {
+  id        String   @id @default(uuid())
+  name      String
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner    User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  members  WorkspaceMember[]
+  projects Project[]
+
+  @@index([ownerId])
+}
+
+// 工作空间成员（多对多中间表）—— RBAC 权限核心
+model WorkspaceMember {
+  id          String   @id @default(uuid())
+  userId      String
+  workspaceId String
+  role        Role     @default(MEMBER)
+  createdAt   DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+}
+
+// ============================== 项目 ==============================
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  workspaceId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+
+  @@index([workspaceId])
+}
+
+// ============================== 任务 ==============================
+model Task {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  priority    Priority   @default(MEDIUM)
+  position    Float      @default(0) // 拖拽排序用，支持小数便于插入
+  dueDate     DateTime?
+  projectId   String
+  assigneeId  String?
+  createdById String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee  User?   @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdBy User?   @relation("TaskCreator", fields: [createdById], references: [id])
+  comments  Comment[]
+  labels    TaskLabel[]
+
+  @@index([projectId])
+  @@index([assigneeId])
+}
+
+// ============================== 评论 ==============================
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  taskId    String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+// ============================== 标签 ==============================
+model Label {
+  id          String   @id @default(uuid())
+  name        String
+  color       String   @default("#6B7280")
+  workspaceId String
+  tasks       TaskLabel[]
+
+  @@unique([name, workspaceId])
+  @@index([workspaceId])
+}
+
+// 任务-标签 多对多
+model TaskLabel {
+  taskId String
+  labelId String
+
+  task  Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  label Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, labelId])
+}
+
+// ============================== 通知 ==============================
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  content   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ============================== 枚举 ==============================
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}

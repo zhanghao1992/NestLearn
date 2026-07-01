@@ -13,5 +13,11 @@ export const getServerToken = () => cookies().get(TOKEN_KEY)?.value ?? null;
 /** 服务端读取当前用户 */
 export const getServerUser = (): User | null => {
   const raw = cookies().get(USER_KEY)?.value;
-  return raw ? (JSON.parse(raw) as User) : null;
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as User;
+  } catch {
+    // ponytail: 客户端可写坏的 cookie，信任边界上视为未登录而非 500
+    return null;
+  }
 };

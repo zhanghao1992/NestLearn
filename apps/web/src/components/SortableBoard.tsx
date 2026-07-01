@@ -40,6 +40,13 @@ export function SortableBoard({
 }) {
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  // router.refresh() 会让服务端传入新的 initialTasks 引用，但 useState 初始值仅在挂载时生效；
+  // 需在渲染期间同步，否则新增任务不显示、拖拽失败回滚也不生效（React 推荐的“prop 变化时调整 state”写法）
+  const [prevInitial, setPrevInitial] = useState(initialTasks);
+  if (initialTasks !== prevInitial) {
+    setPrevInitial(initialTasks);
+    setTasks(initialTasks);
+  }
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
